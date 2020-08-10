@@ -1,0 +1,32 @@
+{% extends 'index.html' %}
+
+
+{% block content %}
+
+<div class="container">
+    <form action="" method="post" enctype="multipart/form-data">
+
+        {{ form.csrf_token }}
+
+        {{ form.title.label() }}
+        {{ form.title(class="form-control") }}
+
+        {% if form.title.errors %}
+        {% for error in form.title.errors %}
+        {{ error }}<br>
+        {% endfor %}
+        {% endif %}
+
+        {{ form.image_file.label() }}
+        {{ form.image_file(class="form-control-file") }}
+
+        {% if form.image_file.errors %}
+        {% for error in form.image_file.errors %}
+        {{ error }}
+        {% endfor %}
+        {% endif %}
+        {{ form.submit(class="btn btn-lg btn-info btn-block") }}
+    </form>
+</div>
+
+{% endblock content %}

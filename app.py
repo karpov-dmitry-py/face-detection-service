@@ -1,19 +1,32 @@
-from flask import Flask, render_template, flash, redirect, url_for, request
-from flask_sqlalchemy import SQLAlchemy
+import os
+from datetime import datetime
+
+from flask import Flask, render_template, flash, redirect, url_for
+from flask_script import Manager
+from flask_migrate import Migrate, MigrateCommand
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_sqlalchemy import SQLAlchemy
+from flask_uploads import configure_uploads, IMAGES, UploadSet
 from werkzeug.security import generate_password_hash, check_password_hash
-from forms import LoginForm
+from werkzeug.utils import secure_filename
+
+from forms import LoginForm, ImageUploadForm
 
 app = Flask(__name__)
 app.debug = True
 app.config['SECRET_KEY'] = 'secretkeyforthisappneedstobeprovidedhere'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:dk@PSG20@localhost:5432/face_app_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOADED_IMAGES_DEST'] = 'static/user_images'
 
 db = SQLAlchemy(app)
-login_manager = LoginManager()
-login_manager.login_view = 'login'
-login_manager.init_app(app)
+
+manager = Manager(app)
+migrate = Migrate(app, db)
+manager.add_command('db', MigrateCommand)
+
+upload_set = UploadSet('images', IMAGES)
+configure_uploads(app, upload_set)
 
 
 class User(db.Model, UserMixin):
@@ -36,11 +49,31 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
 
 
+class Image(db.Model):
+    __tablename__ = 'images'
+    id = db.Column(db.Integer(), primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    created_on = db.Column(db.DateTime(), default=datetime.utcnow)
+    user_id = db.Column(db.Integer(), db.ForeignKey('users.id', ondelete='CASCADE'))
+
+    def __str__(self):
+        return f'user id: {self.user_id}. {self.title} ({self.filename})'
+
+    def get_upload_date(self):
+        return self.created_on.strftime('%d.%m.%Y %H:%M')
+
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.query(User).get(user_id)
 
 
+# views
 @app.route('/login', methods=['post', 'get'])
 def login():
     if current_user.is_authenticated:
@@ -53,7 +86,7 @@ def login():
             login_user(user, remember=True)
             return redirect(url_for('home'))
 
-        flash("Invalid username/password", 'error')
+        flash("Invalid username or password!", 'error')
         return redirect(url_for('login'))
     return render_template('login.html', form=form, title='Login page')
 
@@ -61,16 +94,74 @@ def login():
 @app.route('/')
 @login_required
 def home():
-    return render_template('home.html', title='Home page')
+    images = db.session.query(Image).filter(Image.user_id == current_user.id)
+    images = images if images else []
+    context = {
+        'images': images,
+        'upload_dir': app.config['UPLOADED_IMAGES_DEST'],
+        'title': 'Home page',
+    }
+    return render_template('home.html', **context)
+
+
+@app.route('/upload', methods=['post', 'get'])
+@login_required
+def upload():
+    form = ImageUploadForm()
+    if form.validate_on_submit():
+        # save file
+        safe_filename = secure_filename(form.image_file.data.filename)
+        final_filename = f'{current_user.id}_{str(current_user.images_count + 1)}_{safe_filename}'
+        upload_set.save(form.image_file.data, name=final_filename)
+
+        # add image row in db
+        image = Image()
+        image.title = form.title.data
+        image.filename = final_filename
+        image.user_id = current_user.id
+        db.session.add(image)
+
+        # update user image count
+        current_user.images_count += 1
+        db.session.commit()
+
+        flash(f'File {safe_filename} has been uploaded successfully!')
+        return redirect(url_for('home'))
+    return render_template('upload.html', form=form, title='Image upload page')
+
+
+@app.route('/delete/<int:image_id>')
+@login_required
+def delete(image_id):
+    image = db.session.query(Image).get(image_id)
+    if not image:
+        flash('Image not found!', 'error')
+    else:
+        image_title = image.title
+        image_filename = image.filename
+        db.session.delete(image)
+        db.session.commit()
+
+        file_dir = app.config['UPLOADED_IMAGES_DEST']
+        file_full_path = os.path.normpath(os.path.join(file_dir, image_filename))
+        try:
+            os.remove(file_full_path)
+        except (FileNotFoundError, FileExistsError) as e:
+            pass
+
+        flash(f'Image {image_filename} has been deleted successfully!', 'success')
+
+    return redirect(url_for('home'))
 
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    flash("You have been logged out.")
+    flash('You have been logged out!', 'success')
     return redirect(url_for('login'))
 
 
 if __name__ == '__main__':
+    # manager.run()
     app.run()

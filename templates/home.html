@@ -1,7 +1,30 @@
 {% extends 'index.html' %}
 
 {% block content %}
-    <div class="container">
-      <h1>This is home page for current user: {{ current_user.email }}</h1>
-    </div>
+
+<div class="alert alert-primary" role="alert">Current user: <strong>{{ current_user.email }}</strong>, Total images
+    uploaded: <strong>{{ current_user.images_count }}</strong>
+</div>
+
+{% if images %}
+
+<ul class="list-group-flush">
+    {% for image in images %}
+        <li class="list-group-item">
+            <div class="card" style="width: 45rem;">
+                <img src="{{ upload_dir }}/{{ image.filename }}" class="card-img-top"
+                     alt="{{ image.title }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ image.title }}</h5>
+                    <div class="card-text">Upload date: {{ image.created_on }}</div>
+                    <a href="{{ url_for('delete', image_id= image.id) }}"
+                       class="btn btn-primary">Delete</a>
+                </div>
+            </div>
+        </li>
+    {% endfor %}
+</ul>
+
+{% endif %}
+
 {% endblock %}
