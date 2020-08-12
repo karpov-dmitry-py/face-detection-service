@@ -99,9 +99,10 @@ def login():
         user = db.session.query(User).filter(User.email == form.email.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=True)
+            flash('You have successfully logged in!', 'success')
             return redirect(url_for('home'))
 
-        flash("Invalid username or password!", 'error')
+        flash('Invalid username or password!', 'error')
         return redirect(url_for('login'))
     return render_template('login.html', form=form, title='Login page')
 
@@ -160,7 +161,7 @@ def upload():
                 db.session.add_all(detections_to_commit)
                 db.session.commit()
 
-        flash(f'File {safe_filename} has been uploaded successfully!')
+        flash(f'File {safe_filename} has been uploaded successfully!', 'success')
         return redirect(url_for('home'))
     return render_template('upload.html', form=form, title='Image upload page')
 
@@ -213,7 +214,7 @@ def delete(image_id):
 @login_required
 def logout():
     logout_user()
-    flash('You have been logged out!', 'success')
+    flash('You have logged out!', 'success')
     return redirect(url_for('login'))
 
 

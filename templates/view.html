@@ -2,33 +2,32 @@
 
 {% block content %}
 
-<!--<div class="card" style="width: 100%;">-->
-    <div class="card">
-    <img src="/{{ upload_dir }}/{{ image.filename }}" class="card-img-top"
+<canvas id="canvas" width="1400px" height="1000px" style="border: 2px solid"></canvas>
+
+<!--<div class="card" style="width: 85%;">-->
+<div class="card">
+    <img hidden id="actual-image" src="/{{ upload_dir }}/{{ image.filename }}" class="card-img-top"
          alt="{{ image.title }}">
     <div class="card-body">
         <h5 class="card-title">{{ image.title }}</h5>
         <div class="card-text">Upload date: {{ image.created_on }}</div>
-        <!--        <a href="{{ url_for('view', image_id = image.id) }}"-->
-        <!--           class="btn btn-info">View detections</a>-->
         <a href="{{ url_for('delete', image_id = image.id) }}"
            class="btn btn-secondary">Delete</a>
         {% if detections %}
-            {% for item in detections %}
-                <div class="alert alert-info face-detection" role="alert">
-                    x: {{ item.topleft_x }}, y: {{ item.topleft_y }}, width: {{ item.width }}, height: {{ item.height }}
-                </div>
-            {% endfor %}
+        {% for item in detections %}
+        <div class="alert alert-info detected-face-item" role="alert">
+            {{ item.topleft_x }},{{ item.topleft_y }},{{ item.width }},{{ item.height }}
+        </div>
+        {% endfor %}
 
         {% else %}
-            <div class="alert alert-warning" role="alert">
-                Face detections not found for current image!
-            </div>
+        <div class="alert alert-warning" role="alert">
+            Face detections not found for current image!
+        </div>
 
         {% endif %}
 
     </div>
 </div>
-
-
+<script src="/static/script.js"></script>
 {% endblock %}
