@@ -11,6 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 from forms import LoginForm, ImageUploadForm
+from api import FaceDetector
 
 app = Flask(__name__)
 app.debug = True
@@ -62,6 +63,20 @@ class Image(db.Model):
 
     def get_upload_date(self):
         return self.created_on.strftime('%d.%m.%Y %H:%M')
+
+
+class Detection(db.Model):
+    __tablename__ = 'detections'
+    id = db.Column(db.Integer(), primary_key=True)
+    topleft_x = db.Column(db.Integer())
+    topleft_y = db.Column(db.Integer())
+    height = db.Column(db.Integer())
+    width = db.Column(db.Integer())
+    image_id = db.Column(db.Integer(), db.ForeignKey('images.id', ondelete='CASCADE'))
+
+    def __str__(self):
+        return f'image id: {self.image_id}, x: {self.topleft_x}, y: {self.topleft_y}, width: {self.width}, ' \
+               f'height: {self.height}'
 
 
 login_manager = LoginManager(app)
@@ -120,14 +135,55 @@ def upload():
         image.filename = final_filename
         image.user_id = current_user.id
         db.session.add(image)
-
-        # update user image count
-        current_user.images_count += 1
         db.session.commit()
+
+        # update user uploaded images count
+        current_user.images_count += 1
+
+        # detect faces for current image and save data in db
+        detector = FaceDetector(final_filename)
+        result = detector.get_detections()
+        data = result.get('data')
+        if data:
+            image_id = image.id
+            detections_to_commit = []
+            for item in data:
+                detection = Detection()
+                detection.topleft_x = item['x']
+                detection.topleft_y = item['y']
+                detection.width = item['width']
+                detection.height = item['height']
+                detection.image_id = image_id
+                detections_to_commit.append(detection)
+
+            if detections_to_commit:
+                db.session.add_all(detections_to_commit)
+                db.session.commit()
 
         flash(f'File {safe_filename} has been uploaded successfully!')
         return redirect(url_for('home'))
     return render_template('upload.html', form=form, title='Image upload page')
+
+
+@app.route('/view/<int:image_id>')
+@login_required
+def view(image_id):
+    image = db.session.query(Image).get(image_id)
+    if not image:
+        flash('Image not found!', 'error')
+        return redirect(url_for('home'))
+
+    detections = db.session.query(Detection).filter(Detection.image_id == image.id)
+    detections = detections if len(tuple(detections)) else None
+    context = {
+        'image': image,
+        'upload_dir': app.config['UPLOADED_IMAGES_DEST'],
+        'title': f'{image.title} (image view page)',
+    }
+    if detections:
+        context['detections'] = detections
+
+    return render_template('view.html', **context)
 
 
 @app.route('/delete/<int:image_id>')
@@ -137,7 +193,6 @@ def delete(image_id):
     if not image:
         flash('Image not found!', 'error')
     else:
-        image_title = image.title
         image_filename = image.filename
         db.session.delete(image)
         db.session.commit()

@@ -39,8 +39,14 @@
       </div>
 </nav>
 
+{% if current_user.is_authenticated %}
+    <div class="alert alert-primary" role="alert">Current user: <strong>{{ current_user.email }}</strong>, Total images
+        uploaded: <strong>{{ current_user.images_count }}</strong>
+    </div>
+{% endif %}
+
     {% for category, message in get_flashed_messages(with_categories=true) %}
-        <div class="{{ category }} alert alert-success" role="alert">{{ message }}</div>
+        <div class="{{ category }} alert" role="alert">{{ message }}</div>
     {% endfor %}
 
 {% block content %}
