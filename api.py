@@ -1,6 +1,9 @@
 import requests
 import os.path
 
+# FACECLOUD_API_LOGIN = 'dem0schase@gmail.com'
+# FACECLOUD_API_PSWD = 'facecloudpswd'
+
 ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmNDNkNWVlMi0wMDc1LTRlMjktOWI3NC0xZDY2ZjVhYjk3MDciLCJ0eXBlIjoiYWNjZXNzIiwic3ViIjoxMTUsImlhdCI6MTU5NzE4MDY5NCwibmJmIjoxNTk3MTgwNjk0LCJmcmVzaCI6ZmFsc2V9.9NLmhYNgiaiNpSAUVPCENzJDoLpvc4NBearY_iA-kd8'
 DETECT_URL = 'https://backend.facecloud.tevian.ru/api/v1/detect'
 IMAGES_DIR = 'static/user_images'

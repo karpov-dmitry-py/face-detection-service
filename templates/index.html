@@ -44,6 +44,7 @@
     <div class="alert alert-info" role="alert">Current user: <strong>{{ current_user.email }}</strong>, Total images
         uploaded: <strong>{{ current_user.images_count }}</strong>
     </div>
+    <div hidden class="alert alert-info" role="alert" id="async-update-status"></div>
 {% endif %}
 
     {% for category, message in get_flashed_messages(with_categories=true) %}

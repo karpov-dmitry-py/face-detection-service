@@ -6,21 +6,23 @@
 
 <ul class="list-group-flush">
     {% for image in images %}
-        <li class="list-group-item">
-            <div class="card" style="width: 35rem;">
-                <img src="/{{ upload_dir }}/{{ image.filename }}" class="card-img-top"
-                     alt="{{ image.title }}">
-                <div class="card-body">
-                    <h5 class="card-title">{{ image.title }}</h5>
-                    <div class="card-text">Upload date: {{ image.created_on }}</div>
-                    <a href="{{ url_for('view', image_id = image.id) }}"
-                       class="btn btn-info">View detections</a>
-                    <a href="{{ url_for('delete', image_id = image.id) }}"
-                       class="btn btn-secondary">Delete</a>
+    <li class="list-group-item">
+        <div class="card" style="width: 35rem;">
+            <a href="{{ url_for('view', image_id = image.id) }}">
+            <img src="/{{ upload_dir }}/{{ image.filename }}" class="card-img-top"
+                 alt="{{ image.title }}">
+            </a>
+            <div class="card-body">
+                <h5 class="card-title">{{ image.title }}</h5>
+                <div class="card-text">Upload date: {{ image.created_on }}</div>
+                <a href="{{ url_for('view', image_id = image.id) }}"
+                   class="btn btn-info">View detections</a>
+                <a href="{{ url_for('delete', image_id = image.id) }}"
+                   class="btn btn-secondary">Delete</a>
 
-                </div>
             </div>
-        </li>
+        </div>
+    </li>
     {% endfor %}
 </ul>
 

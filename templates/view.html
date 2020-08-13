@@ -11,11 +11,12 @@
     <div class="card-body">
         <h5 class="card-title">{{ image.title }}</h5>
         <div class="card-text">Upload date: {{ image.created_on }}</div>
+        <button type="button" class="btn-update-image-data btn btn-info">Save changes</button>
         <a href="{{ url_for('delete', image_id = image.id) }}"
-           class="btn btn-secondary">Delete</a>
+           class="btn btn-secondary">Delete Image</a>
         {% if detections %}
         {% for item in detections %}
-        <div class="alert alert-info detected-face-item" role="alert" id={{ item.id }}>
+        <div hidden class="alert alert-info detected-face-item" role="alert" id={{ item.id }}>
             {{ item.topleft_x }},{{ item.topleft_y }},{{ item.width }},{{ item.height }}
         </div>
         {% endfor %}

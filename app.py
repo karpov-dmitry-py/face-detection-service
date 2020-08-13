@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from flask import Flask, render_template, flash, redirect, url_for
+from flask import Flask, render_template, flash, redirect, url_for, request
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -166,13 +166,41 @@ def upload():
     return render_template('upload.html', form=form, title='Image upload page')
 
 
-@app.route('/view/<int:image_id>')
+@app.route('/view/<int:image_id>', methods=['post', 'get'])
 @login_required
 def view(image_id):
     image = db.session.query(Image).get(image_id)
     if not image:
         flash('Image not found!', 'error')
         return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        # delete existing rows for current image
+        existing_detections = db.session.query(Detection).filter(Detection.image_id == image_id)
+        for row in existing_detections:
+            db.session.delete(row)
+
+        # add new rows for current image
+        image_data_to_save = request.json
+        if image_data_to_save:
+            detections_to_commit = []
+
+            for item in image_data_to_save:
+                detection = Detection()
+                detection.topleft_x = item['x']
+                detection.topleft_y = item['y']
+                detection.width = item['width']
+                detection.height = item['height']
+                detection.image_id = image_id
+                detections_to_commit.append(detection)
+
+            if detections_to_commit:
+                db.session.add_all(detections_to_commit)
+
+        db.session.commit()
+
+        flash('Image data has been successfully updated!', 'success')
+        # return redirect(url_for('view', image_id=image_id))
 
     detections = db.session.query(Detection).filter(Detection.image_id == image.id)
     detections = detections if len(tuple(detections)) else None
