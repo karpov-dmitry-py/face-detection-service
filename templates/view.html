@@ -1,13 +1,13 @@
 {% extends 'index.html' %}
 
 {% block content %}
+<!--<canvas id="canvas" width="1250px" height="1000px" style="border: 3px solid"></canvas>-->
+<!--<canvas id="canvas" style="border: 5px solid; border-color: cyan;"></canvas>-->
+<canvas id="canvas"></canvas>
 
-<canvas id="canvas" width="1400px" height="1000px" style="border: 2px solid"></canvas>
-
-<!--<div class="card" style="width: 85%;">-->
-<div class="card">
-    <img hidden id="actual-image" src="/{{ upload_dir }}/{{ image.filename }}" class="card-img-top"
+<img hidden id="actual-image" src="/{{ upload_dir }}/{{ image.filename }}" class="card-img-top"
          alt="{{ image.title }}">
+<div class="card">
     <div class="card-body">
         <h5 class="card-title">{{ image.title }}</h5>
         <div class="card-text">Upload date: {{ image.created_on }}</div>
@@ -15,7 +15,7 @@
            class="btn btn-secondary">Delete</a>
         {% if detections %}
         {% for item in detections %}
-        <div class="alert alert-info detected-face-item" role="alert">
+        <div class="alert alert-info detected-face-item" role="alert" id={{ item.id }}>
             {{ item.topleft_x }},{{ item.topleft_y }},{{ item.width }},{{ item.height }}
         </div>
         {% endfor %}

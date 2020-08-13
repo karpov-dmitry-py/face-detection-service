@@ -1,3 +1,7 @@
+body {
+    position: relative;
+}
+
 .container {
   width: 400px;
 }
